@@ -1,7 +1,67 @@
-monitor
-a.out
-settings.json
+# Build directories
+/build/
+/cmake-build-*/
+/out/
+/debug/
+/release/
+
+# Compiled object files
 *.o
-build/*
-*.json
-.github/**
+*.obj
+*.lo
+*.slo
+
+# Compiled dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled static libraries
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+monitor
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+Makefile
+
+# IDE specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.vs/
+*.cbp
+*.user
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Core dumps
+core
+
+# Temporary files
+tmp/
+temp/
+
+# Log files
+*.log
+
+# Backup files
+*.bak

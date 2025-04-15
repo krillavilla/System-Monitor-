@@ -1,33 +1,79 @@
+// src/process.cpp
 #include <unistd.h>
-#include <cctype>
 #include <sstream>
 #include <string>
 #include <vector>
+#include <fstream>
 
 #include "process.h"
+#include "linux_parser.h"
 
 using std::string;
 using std::to_string;
 using std::vector;
 
-// TODO: Return this process's ID
-int Process::Pid() { return 0; }
+Process::Process(int pid) : pid_(pid) {
+  UpdateCpuUtilization();
+}
 
-// TODO: Return this process's CPU utilization
-float Process::CpuUtilization() { return 0; }
+// Return process ID
+int Process::Pid() { return pid_; }
 
-// TODO: Return the command that generated this process
-string Process::Command() { return string(); }
+// Calculate CPU utilization for this process
+float Process::CpuUtilization() {
+  UpdateCpuUtilization();
+  return cpu_;
+}
 
-// TODO: Return this process's memory utilization
-string Process::Ram() { return string(); }
+void Process::UpdateCpuUtilization() {
+  // Get process stats
+  string line;
+  vector<string> values;
+  string value;
 
-// TODO: Return the user (name) that generated this process
-string Process::User() { return string(); }
+  std::ifstream filestream(LinuxParser::kProcDirectory + to_string(pid_) + LinuxParser::kStatFilename);
+  if (filestream.is_open()) {
+    std::getline(filestream, line);
+    std::istringstream linestream(line);
 
-// TODO: Return the age of this process (in seconds)
-long int Process::UpTime() { return 0; }
+    // Read all values
+    while (linestream >> value) {
+      values.push_back(value);
+    }
 
-// TODO: Overload the "less than" comparison operator for Process objects
-// REMOVE: [[maybe_unused]] once you define the function
-bool Process::operator<(Process const& a[[maybe_unused]]) const { return true; }
+    if (values.size() < 22) return;
+
+    long utime = std::stol(values[13]);
+    long stime = std::stol(values[14]);
+    long cutime = std::stol(values[15]);
+    long cstime = std::stol(values[16]);
+    long starttime = std::stol(values[21]);
+
+    long total_time = utime + stime + cutime + cstime;
+    long seconds = LinuxParser::UpTime() - (starttime / sysconf(_SC_CLK_TCK));
+
+    if (seconds - prev_seconds_ > 0) {
+      cpu_ = ((float)(total_time - prev_total_time_) / sysconf(_SC_CLK_TCK)) / (seconds - prev_seconds_);
+    }
+
+    prev_total_time_ = total_time;
+    prev_seconds_ = seconds;
+  }
+}
+
+// Return process command
+string Process::Command() { return LinuxParser::Command(pid_); }
+
+// Return process RAM usage
+string Process::Ram() { return LinuxParser::Ram(pid_); }
+
+// Return process username
+string Process::User() { return LinuxParser::User(pid_); }
+
+// Return process uptime
+long int Process::UpTime() { return LinuxParser::UpTime(pid_); }
+
+// Compare processes based on CPU usage (for sorting)
+bool Process::operator<(Process const& a) const {
+  return cpu_ > a.cpu_; // Sort in descending order
+}
